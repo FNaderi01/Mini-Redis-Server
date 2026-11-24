@@ -63,7 +63,7 @@ class MiniRedis:
                 if len(params) != 2:
                     print(f"Invalid number of arguments for ECHO. Your command: {cmd}")
                     return
-                print(cmd)
+                print(s % " ".params.join())
                 return
             case CMD.EXISTS:
                 if len(params) != 2:

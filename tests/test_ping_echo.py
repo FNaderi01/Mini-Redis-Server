@@ -2,20 +2,32 @@
 
 
 def test_ping_prints_pong(redis, capsys):
-    # TODO: process "PING", then check capsys.readouterr().out contains "PONG"
-    pass
+    redis.process_command("PING")
+    
+    captured = capsys.readouterr()
+    assert("PONG" in captured.out)
 
 
 def test_ping_with_args_is_rejected(redis, capsys):
-    # TODO
-    pass
+    pout = redis.process_command("PING 4")
+    assert(pout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for PING" in captured.out)
+    
 
 
 def test_echo_prints_message(redis, capsys):
-    # TODO: decide what "ECHO hello" should print ("hello" vs the whole command)
-    pass
+    redis.process_command("ECHO Hello World!")
+    
+    captured = capsys.readouterr()
+    assert("Hello World!" in captured.out)
 
 
 def test_echo_without_args_is_rejected(redis, capsys):
-    # TODO
-    pass
+    eout = redis.process_command("ECHO")
+    assert(eout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for ECHO" in captured.out)
+    
