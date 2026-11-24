@@ -1,29 +1,22 @@
-"""Tests for PING and ECHO (these print instead of returning, so use capsys)."""
+"""Tests for PING and ECHO."""
+import pytest
 
 
-def test_ping_prints_pong(redis):
+def test_ping_returns_pong(redis):
     pout = redis.process_command("PING")
     assert(pout == b"PONG")
 
 
-def test_ping_with_args_is_rejected(redis, capsys):
-    pout = redis.process_command("PING 4")
-    assert(pout is None)
-    
-    captured = capsys.readouterr()
-    assert("Invalid number of arguments for PING" in captured.out)
-    
+def test_ping_with_args_is_rejected(redis):
+    with pytest.raises(ValueError, match="Invalid number of arguments for PING"):
+        redis.process_command("PING 4")
 
 
-def test_echo_prints_message(redis, capsys):
+def test_echo_returns_message(redis):
     eout = redis.process_command("ECHO Hello World!")
     assert(eout == b"Hello World!")
 
 
-def test_echo_without_args_is_rejected(redis, capsys):
-    eout = redis.process_command("ECHO")
-    assert(eout is None)
-    
-    captured = capsys.readouterr()
-    assert("Invalid number of arguments for ECHO" in captured.out)
-    
+def test_echo_without_args_is_rejected(redis):
+    with pytest.raises(ValueError, match="Invalid number of arguments for ECHO"):
+        redis.process_command("ECHO")

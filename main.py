@@ -20,60 +20,59 @@ class MiniRedis:
             'exists' : CMD.EXISTS
         }
 
+    @staticmethod
+    def _check_arg_count(params: list[str], name: str, expected: int) -> None:
+        """Raise ValueError unless the command has exactly `expected` arguments."""
+        if len(params) - 1 != expected:
+            raise ValueError(
+                f"Invalid number of arguments for {name}: "
+                f"expected {expected}, got {len(params) - 1}."
+            )
+
     def process_command(self, cmd : str):
+        if not isinstance(cmd, str):
+            raise TypeError(f"Command must be a str, not {type(cmd).__name__}.")
+
         params = cmd.split()
         if not params:
-            return None
+            raise ValueError("Empty command.")
         params[0] = params[0].lower()
-        if self.supported_commands.get(params[0]) is None:
-            print("Command not supported.")
-            return
+        if params[0] not in self.supported_commands:
+            raise ValueError(f"Command not supported: {params[0]!r}.")
         
         cmd_type = self.supported_commands[params[0]]
         match cmd_type:
             case CMD.GET:
-                if len(params) != 2:
-                    print("Invalid number of arguments for GET.")
-                    return
+                self._check_arg_count(params, "GET", 1)
                 key = params[1].encode("utf-8")
                 return self.store.get(key)
             case CMD.SET:
-                if len(params) != 3:
-                    print("Invalid number of arguments for SET.")
-                    return
+                self._check_arg_count(params, "SET", 2)
                 key = params[1].encode("utf-8")
                 val = params[2].encode("utf-8")
                 self.store[key] = val
                 return b"OK"
             case CMD.DEL:
-                if len(params) != 2:
-                    print("Invalid number of arguments for DEL.")
-                    return
+                self._check_arg_count(params, "DEL", 1)
                 key = params[1].encode("utf-8")
-                
-                if self.store.get(key) is None:
+                if key not in self.store:
                     return 0
                 del self.store[key]
                 return 1
             case CMD.PING:
-                if len(params) != 1:
-                    print("Invalid number of arguments for PING.")
-                    return
+                self._check_arg_count(params, "PING", 0)
                 return b"PONG"
             case CMD.ECHO:
                 if len(params) < 2:
-                    print("Invalid number of arguments for ECHO.")
-                    return
+                    raise ValueError(
+                        "Invalid number of arguments for ECHO: expected at least 1, got 0."
+                    )
                 params = cmd.split(maxsplit=1)
-                return params[1].encode()
+                return params[1].encode("utf-8")
             case CMD.EXISTS:
-                if len(params) != 2:
-                    print("Invalid number of arguments for EXISTS.")
-                    return
+                self._check_arg_count(params, "EXISTS", 1)
                 key = params[1].encode("utf-8")
-                if self.store.get(key) is None :
-                    return 0
-                return 1
+                return 1 if key in self.store else 0
 
 
 
@@ -83,4 +82,7 @@ if __name__ == "__main__":
     my_reddis = MiniRedis()
     for i in range(n) :
         s = input()
-        print(my_reddis.process_command(s))
+        try:
+            print(my_reddis.process_command(s))
+        except ValueError as e:
+            print(f"ERR {e}")
