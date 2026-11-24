@@ -1,11 +1,9 @@
 """Tests for PING and ECHO (these print instead of returning, so use capsys)."""
 
 
-def test_ping_prints_pong(redis, capsys):
-    redis.process_command("PING")
-    
-    captured = capsys.readouterr()
-    assert("PONG" in captured.out)
+def test_ping_prints_pong(redis):
+    pout = redis.process_command("PING")
+    assert(pout == "PONG")
 
 
 def test_ping_with_args_is_rejected(redis, capsys):
@@ -18,10 +16,8 @@ def test_ping_with_args_is_rejected(redis, capsys):
 
 
 def test_echo_prints_message(redis, capsys):
-    redis.process_command("ECHO Hello World!")
-    
-    captured = capsys.readouterr()
-    assert("Hello World!" in captured.out)
+    eout = redis.process_command("ECHO Hello World!")
+    assert(eout == "Hello World!")
 
 
 def test_echo_without_args_is_rejected(redis, capsys):

@@ -24,7 +24,7 @@ class MiniRedis:
         params = cmd.split(' ')
         params[0] = params[0].lower()
         if self.supported_commands.get(params[0]) is None:
-            print(f"Command not supported. Your command: {cmd}")
+            print("Command not supported.")
             return
         
         cmd_type = self.supported_commands[params[0]]
@@ -57,14 +57,12 @@ class MiniRedis:
                 if len(params) != 1:
                     print("Invalid number of arguments for PING.")
                     return
-                print("PONG")
-                return
+                return "PONG"
             case CMD.ECHO:
                 if len(params) < 2:
                     print("Invalid number of arguments for ECHO.")
                     return
-                print(cmd[5:])
-                return
+                return cmd[5:]
             case CMD.EXISTS:
                 if len(params) != 2:
                     print("Invalid number of arguments for EXISTS.")
