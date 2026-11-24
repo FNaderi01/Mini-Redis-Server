@@ -1,21 +1,26 @@
 """Tests for GET and SET."""
 
-
 def test_set_returns_ok(redis):
-    # TODO: "SET k v" should return b"OK"
-    pass
+    sout = redis.process_command("SET 4 Alice")
+    assert(sout == b"OK")
 
 
 def test_get_after_set_returns_value(redis):
-    # TODO: after "SET k v", "GET k" should return b"v"
-    pass
+    sout = redis.process_command("SET 4 Alice")
+    assert(sout == b"OK")
+    gout = redis.process_command("GET 4")
+    assert(gout == b"Alice")
 
 
 def test_get_missing_key_returns_none(redis):
-    # TODO
-    pass
-
+    sout = redis.process_command("GET 4")
+    assert(sout is None)
 
 def test_set_overwrites_existing_value(redis):
-    # TODO
-    pass
+    redis.process_command("SET 4 Alice")
+    gout = redis.process_command("GET 4")
+    assert(gout == b"Alice")
+    sout = redis.process_command("SET 4 Bob")
+    assert(sout == b"OK")
+    gout = redis.process_command("GET 4")
+    assert(gout == b"Bob")

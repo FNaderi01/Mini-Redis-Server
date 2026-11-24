@@ -78,10 +78,11 @@ class MiniRedis:
 
 
 
-n = input()
-n = int(n)
-my_reddis = MiniRedis()
-for i in range(n) :
-    s = input()
-    print(type(s))
-    print(my_reddis.process_command(s))
+if __name__ == "__main__":
+    n = input()
+    n = int(n)
+    my_reddis = MiniRedis()
+    for i in range(n) :
+        s = input()
+        print(type(s))
+        print(my_reddis.process_command(s))
