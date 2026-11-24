@@ -19,27 +19,25 @@ class MiniRedis:
             'echo' : CMD.ECHO,
             'exists' : CMD.EXISTS
         }
-        print("success")
-
 
     def process_command(self, cmd : str):
         params = cmd.split(' ')
         params[0] = params[0].lower()
         if self.supported_commands.get(params[0]) is None:
-            print("Command not supported")
+            print(f"Command not supported. Your command: {cmd}")
             return
         
         cmd_type = self.supported_commands[params[0]]
         match cmd_type:
             case CMD.GET:
                 if len(params) != 2:
-                    print("Invalid number of arguments for GET command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for GET. Your command: {cmd}")
                     return
                 key = params[1].encode("utf-8")
                 return self.store.get(key)
             case CMD.SET:
                 if len(params) != 3:
-                    print("Invalid number of arguments for SET command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for SET. Your command: {cmd}")
                     return
                 key = params[1].encode("utf-8")
                 val = params[2].encode("utf-8")
@@ -47,7 +45,7 @@ class MiniRedis:
                 return b"OK"
             case CMD.DEL:
                 if len(params) != 2:
-                    print("Invalid number of arguments for DEL command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for DEL. Your command: {cmd}")
                     return
                 key = params[1].encode("utf-8")
                 
@@ -57,19 +55,19 @@ class MiniRedis:
                 return 1
             case CMD.PING:
                 if len(params) != 1:
-                    print("Invalid number of arguments for PING command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for PING. Your command: {cmd}")
                     return
                 print("PONG")
                 return
             case CMD.ECHO:
                 if len(params) != 2:
-                    print("Invalid number of arguments for ECHO command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for ECHO. Your command: {cmd}")
                     return
                 print(cmd)
                 return
             case CMD.EXISTS:
                 if len(params) != 2:
-                    print("Invalid number of arguments for EXISTS command. Your command: %s", cmd)
+                    print(f"Invalid number of arguments for EXISTS. Your command: {cmd}")
                     return
                 key = params[1].encode("utf-8")
                 if self.store.get(key) is None :
@@ -84,5 +82,4 @@ if __name__ == "__main__":
     my_reddis = MiniRedis()
     for i in range(n) :
         s = input()
-        print(type(s))
         print(my_reddis.process_command(s))
