@@ -10,7 +10,7 @@ class CMD(Enum):
 class MiniRedis:
     
     def __init__(self):
-        self.store = {}
+        self.store  : dict[bytes, bytes] = {}
         self.supported_commands = {
             'get' : CMD.GET,
             'set' : CMD.SET,
@@ -21,7 +21,9 @@ class MiniRedis:
         }
 
     def process_command(self, cmd : str):
-        params = cmd.split(' ')
+        params = cmd.split()
+        if not params:
+            return None
         params[0] = params[0].lower()
         if self.supported_commands.get(params[0]) is None:
             print("Command not supported.")
@@ -57,12 +59,13 @@ class MiniRedis:
                 if len(params) != 1:
                     print("Invalid number of arguments for PING.")
                     return
-                return "PONG"
+                return b"PONG"
             case CMD.ECHO:
                 if len(params) < 2:
                     print("Invalid number of arguments for ECHO.")
                     return
-                return cmd[5:]
+                params = cmd.split(maxsplit=1)
+                return params[1].encode()
             case CMD.EXISTS:
                 if len(params) != 2:
                     print("Invalid number of arguments for EXISTS.")

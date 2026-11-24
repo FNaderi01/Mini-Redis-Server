@@ -3,7 +3,7 @@
 
 def test_ping_prints_pong(redis):
     pout = redis.process_command("PING")
-    assert(pout == "PONG")
+    assert(pout == b"PONG")
 
 
 def test_ping_with_args_is_rejected(redis, capsys):
@@ -17,7 +17,7 @@ def test_ping_with_args_is_rejected(redis, capsys):
 
 def test_echo_prints_message(redis, capsys):
     eout = redis.process_command("ECHO Hello World!")
-    assert(eout == "Hello World!")
+    assert(eout == b"Hello World!")
 
 
 def test_echo_without_args_is_rejected(redis, capsys):
