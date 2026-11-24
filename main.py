@@ -42,7 +42,7 @@ class MiniRedis:
                 f"expected {expected}, got {len(args) - 1}."
             )
 
-    def process_command(self, args : list[bytes]):
+    def process_command(self, args : list[bytes]) -> bytes | int | None:
         if not isinstance(args, (list, tuple)):
             raise TypeError(f"Command must be a list of bytes, not {type(args).__name__}.")
         for arg in args:
@@ -86,10 +86,10 @@ class MiniRedis:
 if __name__ == "__main__":
     stdin = sys.stdin.buffer  # read raw bytes instead of decoded str
     n = int(stdin.readline())
-    my_reddis = MiniRedis()
+    my_redis = MiniRedis()
     for i in range(n) :
         line = stdin.readline().rstrip(b"\r\n")
         try:
-            print(my_reddis.process_command(parse_inline(line)))
+            print(my_redis.process_command(parse_inline(line)))
         except ValueError as e:
             print(f"ERR {e}")
