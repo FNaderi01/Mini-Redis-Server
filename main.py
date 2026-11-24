@@ -31,13 +31,13 @@ class MiniRedis:
         match cmd_type:
             case CMD.GET:
                 if len(params) != 2:
-                    print(f"Invalid number of arguments for GET. Your command: {cmd}")
+                    print("Invalid number of arguments for GET.")
                     return
                 key = params[1].encode("utf-8")
                 return self.store.get(key)
             case CMD.SET:
                 if len(params) != 3:
-                    print(f"Invalid number of arguments for SET. Your command: {cmd}")
+                    print("Invalid number of arguments for SET.")
                     return
                 key = params[1].encode("utf-8")
                 val = params[2].encode("utf-8")
@@ -45,7 +45,7 @@ class MiniRedis:
                 return b"OK"
             case CMD.DEL:
                 if len(params) != 2:
-                    print(f"Invalid number of arguments for DEL. Your command: {cmd}")
+                    print("Invalid number of arguments for DEL.")
                     return
                 key = params[1].encode("utf-8")
                 
@@ -55,19 +55,19 @@ class MiniRedis:
                 return 1
             case CMD.PING:
                 if len(params) != 1:
-                    print(f"Invalid number of arguments for PING. Your command: {cmd}")
+                    print("Invalid number of arguments for PING.")
                     return
                 print("PONG")
                 return
             case CMD.ECHO:
-                if len(params) != 2:
-                    print(f"Invalid number of arguments for ECHO. Your command: {cmd}")
+                if len(params) < 2:
+                    print("Invalid number of arguments for ECHO.")
                     return
-                print(s % " ".params.join())
+                print(cmd[5:])
                 return
             case CMD.EXISTS:
                 if len(params) != 2:
-                    print(f"Invalid number of arguments for EXISTS. Your command: {cmd}")
+                    print("Invalid number of arguments for EXISTS.")
                     return
                 key = params[1].encode("utf-8")
                 if self.store.get(key) is None :
