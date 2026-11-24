@@ -4,6 +4,8 @@
 def test_unknown_command_returns_none(redis, capsys):
     out = redis.process_command("FOO BAR")
     assert(out is None)
+    captured = capsys.readouterr()
+    assert("Command not supported" in captured.out)
 
 
 def test_command_name_is_case_insensitive(redis):
@@ -19,6 +21,9 @@ def test_get_with_wrong_arg_count(redis, capsys):
     assert(sout is None)
     sout = redis.process_command("GET")
     assert(sout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for GET" in captured.out)
 
 
 def test_set_with_wrong_arg_count(redis, capsys):
@@ -26,6 +31,9 @@ def test_set_with_wrong_arg_count(redis, capsys):
     assert(sout is None)
     sout = redis.process_command("SET 4 Alice Bob")
     assert(sout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for SET" in captured.out)
 
 
 def test_del_with_wrong_arg_count(redis, capsys):
@@ -33,6 +41,9 @@ def test_del_with_wrong_arg_count(redis, capsys):
     assert(dout is None)
     dout = redis.process_command("DEL 4 Alice")
     assert(dout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for DEL" in captured.out)
 
 
 def test_exists_with_wrong_arg_count(redis, capsys):
@@ -40,3 +51,6 @@ def test_exists_with_wrong_arg_count(redis, capsys):
     assert(eout is None)
     eout = redis.process_command("EXISTS 4 Alice")
     assert(eout is None)
+    
+    captured = capsys.readouterr()
+    assert("Invalid number of arguments for EXISTS" in captured.out)
