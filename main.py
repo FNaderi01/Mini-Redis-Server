@@ -42,7 +42,11 @@ class MiniRedis:
                 f"expected {expected}, got {len(args) - 1}."
             )
 
-    def process_command(self, args : list[bytes]) -> bytes | int | None:
+    def process_command(self, args : list[bytes]) -> tuple[CMD, bytes | int | None]:
+        """Run one command and return (command_type, result).
+
+        Raises TypeError for badly-typed input and ValueError for invalid commands.
+        """
         if not isinstance(args, (list, tuple)):
             raise TypeError(f"Command must be a list of bytes, not {type(args).__name__}.")
         for arg in args:
@@ -56,30 +60,28 @@ class MiniRedis:
             raise ValueError(f"Command not supported: {name!r}.")
         
         cmd_type = self.supported_commands[name]
+        result : bytes | int | None
         match cmd_type:
             case CMD.GET:
                 self._check_arg_count(args, "GET", 1)
-                return self.store.get(args[1])
+                result = self.store.get(args[1])
             case CMD.SET:
                 self._check_arg_count(args, "SET", 2)
                 self.store[args[1]] = args[2]
-                return b"OK"
+                result = b"OK"
             case CMD.DEL:
                 self._check_arg_count(args, "DEL", 1)
-                key = args[1]
-                if key not in self.store:
-                    return 0
-                del self.store[key]
-                return 1
+                result = 1 if self.store.pop(args[1], None) is not None else 0
             case CMD.PING:
                 self._check_arg_count(args, "PING", 0)
-                return b"PONG"
+                result = b"PONG"
             case CMD.ECHO:
                 self._check_arg_count(args, "ECHO", 1)
-                return args[1]
+                result = args[1]
             case CMD.EXISTS:
                 self._check_arg_count(args, "EXISTS", 1)
-                return 1 if args[1] in self.store else 0
+                result = 1 if args[1] in self.store else 0
+        return cmd_type, result
 
 
 
@@ -90,6 +92,7 @@ if __name__ == "__main__":
     for i in range(n) :
         line = stdin.readline().rstrip(b"\r\n")
         try:
-            print(my_redis.process_command(parse_inline(line)))
+            cmd_type, result = my_redis.process_command(parse_inline(line))
+            print(result)
         except ValueError as e:
             print(f"ERR {e}")

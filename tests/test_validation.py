@@ -1,6 +1,8 @@
 """Tests for command validation: unknown commands, case-insensitivity, argument counts."""
 import pytest
 
+from main import CMD
+
 
 def test_unknown_command_raises(redis):
     with pytest.raises(ValueError, match="Command not supported"):
@@ -18,27 +20,32 @@ def test_non_list_of_bytes_raises_type_error(redis, args):
         redis.process_command(args)
 
 
+@pytest.mark.parametrize("args, expected_cmd", [
+    ([b"GET", b"k"], CMD.GET),
+    ([b"SET", b"k", b"v"], CMD.SET),
+    ([b"DEL", b"k"], CMD.DEL),
+    ([b"EXISTS", b"k"], CMD.EXISTS),
+    ([b"PING"], CMD.PING),
+    ([b"ECHO", b"hi"], CMD.ECHO),
+])
+def test_returns_command_type(redis, args, expected_cmd):
+    cmd, _ = redis.process_command(args)
+    assert(cmd == expected_cmd)
+
+
 def test_arguments_can_contain_spaces(redis):
-    sout = redis.process_command([b"SET", b"name", b"John Smith"])
-    assert(sout == b"OK")
-    gout = redis.process_command([b"GET", b"name"])
-    assert(gout == b"John Smith")
+    assert(redis.process_command([b"SET", b"name", b"John Smith"]) == (CMD.SET, b"OK"))
+    assert(redis.process_command([b"GET", b"name"]) == (CMD.GET, b"John Smith"))
 
 
 def test_non_utf8_key_and_value(redis):
-    sout = redis.process_command([b"SET", b"\xff\xfe", b"\x80\x81"])
-    assert(sout == b"OK")
-    gout = redis.process_command([b"GET", b"\xff\xfe"])
-    assert(gout == b"\x80\x81")
+    assert(redis.process_command([b"SET", b"\xff\xfe", b"\x80\x81"]) == (CMD.SET, b"OK"))
+    assert(redis.process_command([b"GET", b"\xff\xfe"]) == (CMD.GET, b"\x80\x81"))
 
 
-def test_command_name_is_case_insensitive(redis):
-    sout = redis.process_command([b"SET", b"4", b"Alice"])
-    assert(sout == b"OK")
-    sout = redis.process_command([b"set", b"4", b"Alice"])
-    assert(sout == b"OK")
-    sout = redis.process_command([b"sEt", b"4", b"Alice"])
-    assert(sout == b"OK")
+@pytest.mark.parametrize("name", [b"SET", b"set", b"sEt"])
+def test_command_name_is_case_insensitive(redis, name):
+    assert(redis.process_command([name, b"4", b"Alice"]) == (CMD.SET, b"OK"))
 
 
 def test_caller_list_is_not_modified(redis):
@@ -74,4 +81,4 @@ def test_exists_with_wrong_arg_count(redis, args):
 def test_failed_set_does_not_change_store(redis):
     with pytest.raises(ValueError):
         redis.process_command([b"SET", b"4", b"Alice", b"Bob"])
-    assert(redis.process_command([b"GET", b"4"]) is None)
+    assert(redis.process_command([b"GET", b"4"]) == (CMD.GET, None))
