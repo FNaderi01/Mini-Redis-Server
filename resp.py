@@ -21,14 +21,7 @@ class MiniRESP:
 
     def __readBulkString__(self, idx : int, data : bytes) -> list[bytes, int]:
         header, idx = self.__readLine__(idx, data)
-        
-        if not header.startswith(b"$"):
-            raise ProtocolError("Expected an array")
-
-        if not header[1:].isdigit():
-            raise ProtocolError("Invalid array length")
-        
-        strLen = int(header[1:])
+        strLen = self.__parseLen__(header, b"$", "Bulk string")
         
         end = idx + strLen
         if len(data) < end + len(self.CRLF):
@@ -38,24 +31,13 @@ class MiniRESP:
             raise ProtocolError("Bulk string is not followed by CRLF")
         return data[idx:end], end + len(self.CRLF)
         
-        
     
     def __readArray__(self, idx : int, data : bytes) -> int :
         if idx >= len(data) :
             return
 
         header, idx = self.__readLine__(idx, data)
-
-
-        # 1. Check the array prefix
-        if not header.startswith(b"*"):
-            raise ProtocolError("Expected an array")
-
-        # 2. Check whether the length is numeric
-        if not header[1:].isdigit():
-            raise ProtocolError("Invalid array length")
-
-        arrLength = int(header[1:])
+        arrLength = self.__parseLen__(header, b"*", "Array")
 
         if arrLength == 0:
             raise ProtocolError("Empty command array")
