@@ -1,25 +1,33 @@
 class MiniRESP:
+    CRLF = b"\r\n"
     def __init__(self):
         pass
+    
+    def __readLine__(self, idx : int, data : bytes) -> tuple[bytes, int] :
+        end = data.find(self.CRLF, idx)
+        if end == -1 :
+            raise IncompleteRequest("Line not terminated yet")
+        
+        return data[idx: end], end + len(self.CRLF)
 
-    def __readBulkString__(self, idx : int, data : bytes) -> list[int, bytes]:
-        curData = data[idx:]
-        parts = curData.split(b"\r\n", maxsplit=1)
+    def __readBulkString__(self, idx : int, data : bytes) -> list[bytes, int]:
+        header, idx = self.__readLine__(idx, data)
         
-        if not parts[0].startswith(b"$"):
+        if not header.startswith(b"$"):
             raise ProtocolError("Expected an array")
+
+        if not header[1:].isdigit():
+            raise ProtocolError("Invalid array length")
         
-        strLen = int(parts[0][1:])
-        idx += len(parts[0]) + 2
+        strLen = int(header[1:])
         
-        if idx >= len(data) :
-            # TODO : raise an error
-            return
+        end = idx + strLen
+        if len(data) < end + len(self.CRLF):
+            raise IncompleteRequest("Bulk string data not fully received")
         
-        ans : bytes = data[idx : idx + strLen]
-        
-        idx += strLen + 2
-        return [idx, ans]
+        if data[end:end + len(self.CRLF)] != self.CRLF:
+            raise ProtocolError("Bulk string is not followed by CRLF")
+        return data[idx:end], end + len(self.CRLF)
         
         
     
@@ -27,34 +35,30 @@ class MiniRESP:
         if idx >= len(data) :
             return
 
-        parts = data.split(b"\r\n", maxsplit=1)
+        header, idx = self.__readLine__(idx, data)
 
-        # 1. Check whether the header is complete
-        if len(parts) < 2:
-            raise IncompleteRequest("Incomplete array header")
 
-        # 2. Check the array prefix
-        if not parts[0].startswith(b"*"):
+        # 1. Check the array prefix
+        if not header.startswith(b"*"):
             raise ProtocolError("Expected an array")
 
-        # 3. Check whether the length is numeric
-        if not parts[0][1:].isdigit():
+        # 2. Check whether the length is numeric
+        if not header[1:].isdigit():
             raise ProtocolError("Invalid array length")
 
-        arrLength = int(parts[0][1:])
+        arrLength = int(header[1:])
 
         if arrLength == 0:
             raise ProtocolError("Empty command array")
         
         print(arrLength)
         ans = []
-        idx = len(parts[0]) + 2
         for i in range(arrLength) :
             curType = data[idx]
             if curType != ord('$') :
                 # TODO : raise error
                 return
-            idx, curEl = self.__readBulkString__(idx, data)
+            curEl, idx = self.__readBulkString__(idx, data)
             ans.append(curEl)
         return ans
 
