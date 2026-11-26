@@ -13,14 +13,14 @@ class MiniRESP:
     def __init__(self):
         pass
     
-    def __readLine__(self, idx : int, data : bytes) -> tuple[bytes, int] :
+    def _read_line(self, idx : int, data : bytes) -> tuple[bytes, int] :
         end = data.find(self.CRLF, idx)
         if end == -1 :
             raise IncompleteRequest("Line not terminated yet")
         
         return data[idx: end], end + len(self.CRLF)
     
-    def __parseLen__(self, line : bytes, prefix : bytes, what : str) -> int :
+    def _parse_len(self, line : bytes, prefix : bytes, what : str) -> int :
         if not line.startswith(prefix) :
             raise ProtocolError(f"Expected {what} ({prefix!r}), got {line[:len(prefix)]!r}")
 
@@ -29,9 +29,9 @@ class MiniRESP:
             raise ProtocolError(f"Invalid {what} length: {digits!r}")
         return int(digits)
 
-    def __readBulkString__(self, idx : int, data : bytes) -> list[bytes, int]:
-        header, idx = self.__readLine__(idx, data)
-        strLen = self.__parseLen__(header, b"$", "Bulk string")
+    def _read_bulk_string(self, idx : int, data : bytes) -> list[bytes, int]:
+        header, idx = self._read_line(idx, data)
+        strLen = self._parse_len(header, b"$", "Bulk string")
         
         end = idx + strLen
         if len(data) < end + len(self.CRLF):
@@ -47,12 +47,12 @@ class MiniRESP:
         if data[:1] not in (b"", b"*"):
             raise ProtocolError(f"Expected array ('*'), got {data[:1]!r}")
 
-        header, idx = self.__readLine__(0, data)
-        arrLength = self.__parseLen__(header, b"*", "Array")
+        header, idx = self._read_line(0, data)
+        arrLength = self._parse_len(header, b"*", "Array")
 
         ans = []
         for _ in range(arrLength) :
-            arg, idx = self.__readBulkString__(idx, data)
+            arg, idx = self._read_bulk_string(idx, data)
             ans.append(arg)
 
         return [ans, idx]
