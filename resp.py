@@ -9,45 +9,51 @@ class IncompleteRequest(Exception):
 
 class MiniRESP:
     CRLF = b"\r\n"
-    NULL_BULK_STR = b"$-1\r\n"
+    NULL_BULK_STR = b"$-1" + CRLF
     def __init__(self):
         pass
     
-    def _read_line(self, idx : int, data : bytes) -> tuple[bytes, int] :
+    def _read_line(self, idx : int, data : bytes, prefix : bytes, what : str) -> tuple[bytes, int]:
+        if idx >= len(data):
+            raise IncompleteRequest("Missing header")
+
+        if not data[idx:].startswith(prefix):
+            raise ProtocolError(f"Expected {what} ({prefix!r}), got {data[idx:idx + len(prefix)]!r}")
         end = data.find(self.CRLF, idx)
-        if end == -1 :
+        if end == -1:
             raise IncompleteRequest("Line not terminated yet")
         
         return data[idx: end], end + len(self.CRLF)
     
     def _parse_len(self, line : bytes, prefix : bytes, what : str) -> int :
-        if not line.startswith(prefix) :
-            raise ProtocolError(f"Expected {what} ({prefix!r}), got {line[:len(prefix)]!r}")
-
         digits = line[len(prefix):]
         if not digits.isdigit() :
             raise ProtocolError(f"Invalid {what} length: {digits!r}")
         return int(digits)
 
-    def _read_bulk_string(self, idx : int, data : bytes) -> list[bytes, int]:
-        header, idx = self._read_line(idx, data)
+    def _read_bulk_string(self, idx : int, data : bytes) -> tuple[bytes, int]:
+        header, idx = self._read_line(idx, data, b"$", "Bulk string")
         strLen = self._parse_len(header, b"$", "Bulk string")
         
         end = idx + strLen
-        if len(data) < end + len(self.CRLF):
+        if len(data) < end:
             raise IncompleteRequest("Bulk string data not fully received")
         
-        if data[end:end + len(self.CRLF)] != self.CRLF:
-            raise ProtocolError("Bulk string is not followed by CRLF")
+        delimiter = data[end:end + len(self.CRLF)]
+
+        if not self.CRLF.startswith(delimiter):
+            raise ProtocolError("Invalid CRLF")
+
+        if len(delimiter) < len(self.CRLF):
+            raise IncompleteRequest("Incomplete CRLF")
         return data[idx:end], end + len(self.CRLF)        
 
     
-    def parser(self, data : bytes) -> tuple[list[bytes], int]:
+    def parser(self, data : bytes, idx : int = 0) -> tuple[list[bytes], int]:
+        if idx >= len(data):
+            raise IncompleteRequest("Empty buffer")
 
-        if data[:1] not in (b"", b"*"):
-            raise ProtocolError(f"Expected array ('*'), got {data[:1]!r}")
-
-        header, idx = self._read_line(0, data)
+        header, idx = self._read_line(idx, data, b"*", "*")
         arrLength = self._parse_len(header, b"*", "Array")
 
         ans = []
@@ -55,7 +61,7 @@ class MiniRESP:
             arg, idx = self._read_bulk_string(idx, data)
             ans.append(arg)
 
-        return [ans, idx]
+        return ans, idx
     
     def _serialize_bulk_string(self, data : bytes) -> bytes:
         length = str(len(data)).encode()
@@ -110,4 +116,5 @@ if __name__ == "__main__":
         print(pars.parser(b"*2"))
     except IncompleteRequest:
         print("here")
+    print(pars.parser(b"*1\r\n$3\r\nGETx"))
         
