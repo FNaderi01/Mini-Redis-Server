@@ -9,6 +9,15 @@ class MiniRESP:
             raise IncompleteRequest("Line not terminated yet")
         
         return data[idx: end], end + len(self.CRLF)
+    
+    def __parseLen__(self, line : bytes, prefix : bytes, what : str) -> int :
+        if not line.startswith(prefix) :
+            raise ProtocolError(f"Expected {what} ({prefix!r}), got {line[:len(prefix)]!r}")
+
+        digits = line[len(prefix):]
+        if not digits.isdigit() :
+            raise ProtocolError(f"Invalid {what} length: {digits!r}")
+        return int(digits)
 
     def __readBulkString__(self, idx : int, data : bytes) -> list[bytes, int]:
         header, idx = self.__readLine__(idx, data)
