@@ -29,33 +29,23 @@ class MiniRESP:
         
         if data[end:end + len(self.CRLF)] != self.CRLF:
             raise ProtocolError("Bulk string is not followed by CRLF")
-        return data[idx:end], end + len(self.CRLF)
-        
-    
-    def __readArray__(self, idx : int, data : bytes) -> int :
-        if idx >= len(data) :
-            return
+        return data[idx:end], end + len(self.CRLF)        
 
-        header, idx = self.__readLine__(idx, data)
+    
+    def parser(self, data : bytes) -> tuple[list[bytes], int]:
+        
+        if data[:1] not in (b"", b"*"):
+            raise ProtocolError(f"Expected array ('*'), got {data[:1]!r}")
+        
+        header, idx = self.__readLine__(0, data)
         arrLength = self.__parseLen__(header, b"*", "Array")
 
-        if arrLength == 0:
-            raise ProtocolError("Empty command array")
-        
-        print(arrLength)
         ans = []
-        for i in range(arrLength) :
-            curType = data[idx]
-            if curType != ord('$') :
-                # TODO : raise error
-                return
-            curEl, idx = self.__readBulkString__(idx, data)
-            ans.append(curEl)
-        return ans
+        for _ in range(arrLength) :
+            arg, idx = self.__readBulkString__(idx, data)
+            ans.append(arg)
 
-    
-    def parser(self, cmd : bytes) -> list[bytes] :
-        return self.__readArray__(0, cmd)
+        return [ans, idx]
     
 
 if __name__ == "__main__":
